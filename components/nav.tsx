@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { Spinner } from "./player";
 
 const links = [
   { href: "/home", label: "Home" },
@@ -13,12 +15,14 @@ const links = [
 
 export function Nav({ userName }: { userName: string }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
 
   async function signOut() {
+    setSigningOut(true);
     await authClient.signOut();
-    router.push("/login");
-    router.refresh();
+    // Full page load (not client navigation) so cached signed-in pages, the
+    // player and Back-button history from this session are all discarded.
+    window.location.replace("/login");
   }
 
   return (
@@ -40,7 +44,15 @@ export function Nav({ userName }: { userName: string }) {
         ))}
         <div className="ml-auto flex items-center gap-3">
           <span className="hidden text-sm text-zinc-400 sm:block">{userName}</span>
-          <button className="btn-ghost" onClick={signOut}>Sign out</button>
+          <button className="btn-ghost" onClick={signOut} disabled={signingOut} aria-busy={signingOut}>
+            {signingOut ? (
+              <>
+                <Spinner className="h-3.5 w-3.5" /> Signing out…
+              </>
+            ) : (
+              "Sign out"
+            )}
+          </button>
         </div>
       </nav>
     </header>
